@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Analyze_ID_Room"
         mc:Ignorable="d"
-        Title="MainWindow" Height="372" Width="709">
+        Title="Học Online" Height="372" Width="709">
     <Grid>
         <Button x:Name="BtnInputFile" Content="Open Excel File" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="96" Height="38" Click="BtnInputFile_Click"/>
         <DataGrid Name="DgClassInfo" AutoGenerateColumns="False" Margin="10,53,10,10" GridLinesVisibility="None" CanUserAddRows="False" CanUserDeleteRows="False">
