@@ -5,16 +5,17 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Analyze_ID_Room"
         mc:Ignorable="d"
-        Title="Học Online" Height="372" Width="709">
+        Title="Học Online" Height="402" Width="812">
     <Grid>
-        <Button x:Name="BtnInputFile" Content="Open Excel File" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="96" Height="38" Click="BtnInputFile_Click"/>
-        <DataGrid Name="DgClassInfo" AutoGenerateColumns="False" Margin="10,53,10,10" GridLinesVisibility="None" CanUserAddRows="False" CanUserDeleteRows="False">
+        <Button x:Name="BtnInputFile" Content="Open Excel File" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="100" Height="38" Click="BtnInputFile_Click"/>
+        <DataGrid CanUserSortColumns="False" Name="DgClassInfo" AutoGenerateColumns="False" Margin="10,64,10,10" GridLinesVisibility="None" CanUserAddRows="False" CanUserDeleteRows="False">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Thứ" Binding="{Binding Day}" />
-                <DataGridTextColumn Header="Môn học" Binding="{Binding CourseName}" />
-                <DataGridTextColumn Header="Tiết học" Binding="{Binding Lession}" />
-                <DataGridTextColumn Header="Phòng học" Binding="{Binding RoomName}" />
-                <DataGridTextColumn Header="Thời gian học" Binding="{Binding RawDateTime}" />
+                <DataGridTextColumn Header="Thứ" Binding="{Binding Day, Mode=OneWay}" />
+                <DataGridTextColumn Header="Môn học" Binding="{Binding CourseName, Mode=OneWay}" />
+                <DataGridTextColumn Header="Tiết học" Binding="{Binding Lession, Mode=OneWay}" />
+                <DataGridTextColumn Header="Vào lớp" Binding="{Binding DurationTime, Mode=OneWay}" />
+                <DataGridTextColumn Header="Phòng học" Binding="{Binding RoomName, Mode=OneWay}" />
+                <DataGridTextColumn Header="Thời gian học" Binding="{Binding RawDateTime, Mode=OneWay}" />
                 <DataGridTemplateColumn Header="Link Online">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -25,7 +26,7 @@
             </DataGrid.Columns>
             <DataGrid.RowDetailsTemplate>
                 <DataTemplate>
-                    <TextBlock Text="{Binding Details}" Margin="10" />
+                    <TextBlock Text="{Binding Details, Mode=OneWay}" Margin="10" />
                 </DataTemplate>
             </DataGrid.RowDetailsTemplate>
         </DataGrid>

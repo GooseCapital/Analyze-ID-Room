@@ -29,6 +29,7 @@ namespace Analyze_ID_Room
 
         public List<ClassInfo> ListClassInfo = new List<ClassInfo>();
         private HttpRequest _httpRequest = new HttpRequest();
+        private const string FileNameSave = "LichHoc.xls";
 
         private static readonly string[] ExampleObjects = new string[11]
         {
@@ -36,10 +37,29 @@ namespace Analyze_ID_Room
             "Thời gian học"
         };
 
+        private static List<TimerPeriod> _timerList = new List<TimerPeriod>()
+        {
+            new TimerPeriod("07:00", "07:50"),
+            new TimerPeriod("07:55", "08:45"),
+            new TimerPeriod("08:50", "09:40"),
+            new TimerPeriod("09:45", "10:35"),
+            new TimerPeriod("10:40", "11:30"),
+            new TimerPeriod("11:35", "12:35"),
+            new TimerPeriod("12:55", "13:45"),
+            new TimerPeriod("13:50", "14:40"),
+            new TimerPeriod("14:45", "15:35"),
+            new TimerPeriod("15:40", "16:30"),
+            new TimerPeriod("16:35", "17:25"),
+            new TimerPeriod("17:30", "18:20"),
+            new TimerPeriod("18:50", "19:40"),
+            new TimerPeriod("19:45", "20:35"),
+            new TimerPeriod("20:40", "21:30")
+        };
+
         public static string GetMD5Hash(string str)
         {
             MD5CryptoServiceProvider md5 = new MD5CryptoServiceProvider();
-            byte[] bytes = ASCIIEncoding.Default.GetBytes(str);
+            byte[] bytes = Encoding.Default.GetBytes(str);
             byte[] encoded = md5.ComputeHash(bytes);
 
             StringBuilder sb = new StringBuilder();
@@ -49,35 +69,30 @@ namespace Analyze_ID_Room
             return sb.ToString();
         }
 
+        #region Login Feature
+
         private bool Login(string username, string password)
         {
             _httpRequest = new HttpRequest();
             CookieDictionary cookieDictionary = new CookieDictionary();
-            // {
-            //     {"__dtsu", "6BB6E72D5DF8DE9E18CD3F45102ACD02"},
-            //     {"_ga", "GA1.3.1169250952.1583144203" },
-            //     {"ASP.NET_SessionId", "45c5rck10lqiq2xejdinyqyn" },
-            //     {"SL_GWPT_Show_Hide_tmp", "1" },
-            //     {"SL_wptGlobTipTmp", "1"}
-            // };
             _httpRequest.Cookies = cookieDictionary;
             _httpRequest.Get("http://dkh.tlu.edu.vn/CMCSoft.IU.Web.Info/Login.aspx");
             var reqPrams = new RequestParams();
             reqPrams["__EVENTTARGET"] = "";
-            // reqPrams["__EVENTARGUMENT"] = "";
-            // reqPrams["__LASTFOCUS"] = "";
-            // reqPrams["__VIEWSTATEGENERATOR"] = "D620498B";
-            // reqPrams["PageHeader1$drpNgonNgu"] = "2D8E12D246D64A7BB3B89CC6484D2776";
-            // reqPrams["PageHeader1$hidisNotify"] = "0";
-            // reqPrams["PageHeader1$hidValueNotify"] = ".";
+            reqPrams["__EVENTARGUMENT"] = "";
+            reqPrams["__LASTFOCUS"] = "";
+            reqPrams["__VIEWSTATEGENERATOR"] = "D620498B";
+            reqPrams["PageHeader1$drpNgonNgu"] = "2D8E12D246D64A7BB3B89CC6484D2776";
+            reqPrams["PageHeader1$hidisNotify"] = "0";
+            reqPrams["PageHeader1$hidValueNotify"] = ".";
             reqPrams["btnSubmit"] = "Đăng+nhập";
             // reqPrams["hidUserId"] = "";
             // reqPrams["hidUserFullName"] = "";
             // reqPrams["hidTrainingSystemId"] = "";
             reqPrams["txtUserName"] = username;
             reqPrams["txtPassword"] = GetMD5Hash(password);
-            // reqPrams["__EVENTVALIDATION"] = "/wEdAA90tNej9blFYHJDs+U5oBbCb8csnTIorMPSfpUKU79Fa8zr1tijm/dVbgMI0MJ/5MhJxi/pyypRM6i+Ay0tyJXpHW/isUyw6w8trNAGHDe5T/w2lIs9E7eeV2CwsZKam8yG9tEt/TDyJa1fzAdIcnRuY3plgk0YBAefRz3MyBlTcHY2+Mc6SrnAqio3oCKbxYY85pbWlDO2hADfoPXD/5tdAxTm4XTnH1XBeB1RAJ3owlx3skko0mmpwNmsvoT+s7J0y/1mTDOpNgKEQo+otMEzMS21+fhYdbX7HjGORawQMqpdNpKktwtkFUYS71DzGv66E0F2ty4ucCjkSoWNZgQd08YQgWdRT/H0yF4ypQtQjQ==";
-            // reqPrams["__VIEWSTATE"] = "/wEPDwUKMTkwNDg4MTQ5MQ9kFgICAQ9kFgpmD2QWCgIBDw8WAh4EVGV4dAU5SOG7hiBUSOG7kE5HIMSQxIJORyBLw50gSOG7jEMgLSDEkOG6oEkgSOG7jEMgVEjhu6ZZIEzhu6JJZGQCAg9kFgJmDw8WBB8ABQ3EkMSDbmcgbmjhuq1wHhBDYXVzZXNWYWxpZGF0aW9uaGRkAgMPEA8WBh4NRGF0YVRleHRGaWVsZAUGa3loaWV1Hg5EYXRhVmFsdWVGaWVsZAUCSUQeC18hRGF0YUJvdW5kZ2QQFQECVk4VASAyRDhFMTJEMjQ2RDY0QTdCQjNCODlDQzY0ODREMjc3NhQrAwFnFgFmZAIEDw8WAh4ISW1hZ2VVcmwFKC9DTUNTb2Z0LklVLldlYi5JbmZvL0ltYWdlcy9Vc2VySW5mby5naWZkZAIFD2QWBgIBDw8WAh8ABQZLaMOhY2hkZAIDDw8WAh8AZWRkAgcPDxYCHgdWaXNpYmxlaGRkAgIPZBYEAgMPD2QWAh4Gb25ibHVyBQptZDUodGhpcyk7ZAIHDw8WAh8AZWRkAgQPDxYCHwZoZGQCBg8PFgIfBmhkFgYCAQ8PZBYCHwcFCm1kNSh0aGlzKTtkAgUPD2QWAh8HBQptZDUodGhpcyk7ZAIJDw9kFgIfBwUKbWQ1KHRoaXMpO2QCCw9kFghmDw8WAh8ABQwwMjQuMzg1MjE0NDFkZAIBD2QWAmYPDxYCHwFoZGQCAg9kFgJmDw8WBB8ABQ3EkMSDbmcgbmjhuq1wHwFoZGQCAw8PFgIfAAW0BTxhIGhyZWY9IiMiIG9uY2xpY2s9ImphdmFzY3JpcHQ6d2luZG93LnByaW50KCkiPjxkaXYgc3R5bGU9IkZMT0FUOmxlZnQiPgk8aW1nIHNyYz0iL0NNQ1NvZnQuSVUuV2ViLkluZm8vaW1hZ2VzL3ByaW50LnBuZyIgYm9yZGVyPSIwIj48L2Rpdj48ZGl2IHN0eWxlPSJGTE9BVDpsZWZ0O1BBRERJTkctVE9QOjZweCI+SW4gdHJhbmcgbsOgeTwvZGl2PjwvYT48YSBocmVmPSJtYWlsdG86P3N1YmplY3Q9SGUgdGhvbmcgdGhvbmcgdGluIElVJmFtcDtib2R5PWh0dHA6Ly9ka2gudGx1LmVkdS52bi9DTUNTb2Z0LklVLldlYi5JbmZvL0xvZ2luLmFzcHgiPjxkaXYgc3R5bGU9IkZMT0FUOmxlZnQiPjxpbWcgc3JjPSIvQ01DU29mdC5JVS5XZWIuSW5mby9pbWFnZXMvc2VuZGVtYWlsLnBuZyIgIGJvcmRlcj0iMCI+PC9kaXY+PGRpdiBzdHlsZT0iRkxPQVQ6bGVmdDtQQURESU5HLVRPUDo2cHgiPkfhu61pIGVtYWlsIHRyYW5nIG7DoHk8L2Rpdj48L2E+PGEgaHJlZj0iIyIgb25jbGljaz0iamF2YXNjcmlwdDphZGRmYXYoKSI+PGRpdiBzdHlsZT0iRkxPQVQ6bGVmdCI+PGltZyBzcmM9Ii9DTUNTb2Z0LklVLldlYi5JbmZvL2ltYWdlcy9hZGR0b2Zhdm9yaXRlcy5wbmciICBib3JkZXI9IjAiPjwvZGl2PjxkaXYgc3R5bGU9IkZMT0FUOmxlZnQ7UEFERElORy1UT1A6NnB4Ij5UaMOqbSB2w6BvIMawYSB0aMOtY2g8L2Rpdj48L2E+ZGRkbiplXuTlfiOl6mrLaLXQzmg+SN2Z85mFV4xgTKvmLQs=";
+            reqPrams["__EVENTVALIDATION"] = "/wEdAA90tNej9blFYHJDs+U5oBbCb8csnTIorMPSfpUKU79Fa8zr1tijm/dVbgMI0MJ/5MhJxi/pyypRM6i+Ay0tyJXpHW/isUyw6w8trNAGHDe5T/w2lIs9E7eeV2CwsZKam8yG9tEt/TDyJa1fzAdIcnRuY3plgk0YBAefRz3MyBlTcHY2+Mc6SrnAqio3oCKbxYY85pbWlDO2hADfoPXD/5tdAxTm4XTnH1XBeB1RAJ3owlx3skko0mmpwNmsvoT+s7J0y/1mTDOpNgKEQo+otMEzMS21+fhYdbX7HjGORawQMqpdNpKktwtkFUYS71DzGv66E0F2ty4ucCjkSoWNZgQd08YQgWdRT/H0yF4ypQtQjQ==";
+            reqPrams["__VIEWSTATE"] = "/wEPDwUKMTkwNDg4MTQ5MQ9kFgICAQ9kFgpmD2QWCgIBDw8WAh4EVGV4dAU5SOG7hiBUSOG7kE5HIMSQxIJORyBLw50gSOG7jEMgLSDEkOG6oEkgSOG7jEMgVEjhu6ZZIEzhu6JJZGQCAg9kFgJmDw8WBB8ABQ3EkMSDbmcgbmjhuq1wHhBDYXVzZXNWYWxpZGF0aW9uaGRkAgMPEA8WBh4NRGF0YVRleHRGaWVsZAUGa3loaWV1Hg5EYXRhVmFsdWVGaWVsZAUCSUQeC18hRGF0YUJvdW5kZ2QQFQECVk4VASAyRDhFMTJEMjQ2RDY0QTdCQjNCODlDQzY0ODREMjc3NhQrAwFnFgFmZAIEDw8WAh4ISW1hZ2VVcmwFKC9DTUNTb2Z0LklVLldlYi5JbmZvL0ltYWdlcy9Vc2VySW5mby5naWZkZAIFD2QWBgIBDw8WAh8ABQZLaMOhY2hkZAIDDw8WAh8AZWRkAgcPDxYCHgdWaXNpYmxlaGRkAgIPZBYEAgMPD2QWAh4Gb25ibHVyBQptZDUodGhpcyk7ZAIHDw8WAh8AZWRkAgQPDxYCHwZoZGQCBg8PFgIfBmhkFgYCAQ8PZBYCHwcFCm1kNSh0aGlzKTtkAgUPD2QWAh8HBQptZDUodGhpcyk7ZAIJDw9kFgIfBwUKbWQ1KHRoaXMpO2QCCw9kFghmDw8WAh8ABQwwMjQuMzg1MjE0NDFkZAIBD2QWAmYPDxYCHwFoZGQCAg9kFgJmDw8WBB8ABQ3EkMSDbmcgbmjhuq1wHwFoZGQCAw8PFgIfAAW0BTxhIGhyZWY9IiMiIG9uY2xpY2s9ImphdmFzY3JpcHQ6d2luZG93LnByaW50KCkiPjxkaXYgc3R5bGU9IkZMT0FUOmxlZnQiPgk8aW1nIHNyYz0iL0NNQ1NvZnQuSVUuV2ViLkluZm8vaW1hZ2VzL3ByaW50LnBuZyIgYm9yZGVyPSIwIj48L2Rpdj48ZGl2IHN0eWxlPSJGTE9BVDpsZWZ0O1BBRERJTkctVE9QOjZweCI+SW4gdHJhbmcgbsOgeTwvZGl2PjwvYT48YSBocmVmPSJtYWlsdG86P3N1YmplY3Q9SGUgdGhvbmcgdGhvbmcgdGluIElVJmFtcDtib2R5PWh0dHA6Ly9ka2gudGx1LmVkdS52bi9DTUNTb2Z0LklVLldlYi5JbmZvL0xvZ2luLmFzcHgiPjxkaXYgc3R5bGU9IkZMT0FUOmxlZnQiPjxpbWcgc3JjPSIvQ01DU29mdC5JVS5XZWIuSW5mby9pbWFnZXMvc2VuZGVtYWlsLnBuZyIgIGJvcmRlcj0iMCI+PC9kaXY+PGRpdiBzdHlsZT0iRkxPQVQ6bGVmdDtQQURESU5HLVRPUDo2cHgiPkfhu61pIGVtYWlsIHRyYW5nIG7DoHk8L2Rpdj48L2E+PGEgaHJlZj0iIyIgb25jbGljaz0iamF2YXNjcmlwdDphZGRmYXYoKSI+PGRpdiBzdHlsZT0iRkxPQVQ6bGVmdCI+PGltZyBzcmM9Ii9DTUNTb2Z0LklVLldlYi5JbmZvL2ltYWdlcy9hZGR0b2Zhdm9yaXRlcy5wbmciICBib3JkZXI9IjAiPjwvZGl2PjxkaXYgc3R5bGU9IkZMT0FUOmxlZnQ7UEFERElORy1UT1A6NnB4Ij5UaMOqbSB2w6BvIMawYSB0aMOtY2g8L2Rpdj48L2E+ZGRkbiplXuTlfiOl6mrLaLXQzmg+SN2Z85mFV4xgTKvmLQs=";
             // _webClient.Headers["Connection"] = "keep-alive";
             _httpRequest.AddHeader("Cache-Control", "max-age=0");
             _httpRequest.AddHeader("Origin", "http://dkh.tlu.edu.vn");
@@ -150,34 +165,49 @@ namespace Analyze_ID_Room
             _httpRequest.Post("http://dkh.tlu.edu.vn/CMCSoft.IU.Web.Info/Reports/Form/StudentTimeTable.aspx", reqPrams).ToFile("1.xls");
         }
 
+        #endregion
+
         private void BtnInputFile_Click(object sender, RoutedEventArgs e)
         {
-            // bool isLoggedIn = Login("1651122568", "03/08/1998");
+            // bool isLoggedIn = Login("1651122640", "06/09/1998");
             // DownloadScheduleFile();
             if (!File.Exists("ID.xlsx"))
             {
                 MessageBox.Show("Thiếu file ID.xlsx", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            MessageBox.Show("Chọn file excel sắp xếp theo thứ học", "Thông báo", MessageBoxButton.OK,
-                MessageBoxImage.Asterisk);
-            OpenFileDialog open = new OpenFileDialog();
-            open.Multiselect = false;
-            open.Title = "Chọn file Excel";
-            open.DefaultExt = "*.xls";
-            if (open.ShowDialog() == true)
+
+            if (!File.Exists(FileNameSave))
             {
-                string fileName = open.FileName;
-                List<OnlineClassInfo> onlineClassData = ParseOnlineClass("ID.xlsx");
-                if (GetScheduleData(fileName, onlineClassData))
+                MessageBox.Show("Chọn file excel sắp xếp theo thứ học", "Thông báo", MessageBoxButton.OK,
+                MessageBoxImage.Asterisk);
+                OpenFileDialog open = new OpenFileDialog();
+                open.Multiselect = false;
+                open.Title = "Chọn file Excel";
+                if (open.ShowDialog() == true)
                 {
-                    ListClassInfo.Sort((a, b) => a.StartTime.CompareTo(b.StartTime));
-                    DgClassInfo.ItemsSource = ListClassInfo;
+                    string fileName = open.FileName;
+                    File.Copy(fileName, "LichHoc.xls", true);
+                    SendToView(fileName);
                 }
-                else
-                {
-                    MessageBox.Show("Có lỗi xảy ra", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+            }
+            else
+            {
+                SendToView(FileNameSave);
+            }
+        }
+
+        private void SendToView(string fileName)
+        {
+            List<OnlineClassInfo> onlineClassData = ParseOnlineClass("ID.xlsx");
+            if (GetScheduleData(fileName, onlineClassData))
+            {
+                ListClassInfo.Sort((a, b) => a.StartTime.CompareTo(b.StartTime));
+                DgClassInfo.ItemsSource = ListClassInfo;
+            }
+            else
+            {
+                MessageBox.Show("Có lỗi xảy ra", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -237,7 +267,7 @@ namespace Analyze_ID_Room
 
             return onlineClass;
         }
-
+        
         private List<ClassInfo> AddClassInfoToList(DataTable dataTable, List<OnlineClassInfo> onlineClass)
         {
             List<ClassInfo> classList = new List<ClassInfo>();
@@ -247,24 +277,9 @@ namespace Analyze_ID_Room
                 {
                     if (int.TryParse(dataTableRow.ItemArray[0].ToString(), out _))
                     {
-                        classList.Add(new ClassInfo()
-                        {
-                            Day = Convert.ToInt32(dataTableRow.ItemArray[0].ToString()),
-                            CourseCode = dataTableRow.ItemArray[1].ToString(),
-                            CourseName = dataTableRow.ItemArray[3].ToString(),
-                            LectureCode = dataTableRow.ItemArray[4].ToString(),
-                            Seat = dataTableRow.ItemArray[6].ToString(),
-                            TeacherName = dataTableRow.ItemArray[7].ToString(),
-                            Lession = dataTableRow.ItemArray[8].ToString(),
-                            RoomName = dataTableRow.ItemArray[9].ToString(),
-                            RawDateTime = dataTableRow.ItemArray[10].ToString(),
-                            StartTime = DateTime.ParseExact(dataTableRow.ItemArray[10].ToString().Split('-')[0],
-                                "dd/MM/yyyy", CultureInfo.InvariantCulture),
-                            EndTime = DateTime.ParseExact(dataTableRow.ItemArray[10].ToString().Split('-')[1],
-                                "dd/MM/yyyy", CultureInfo.InvariantCulture),
-                            OnlineId = onlineClass.FirstOrDefault(n => n.RoomName == dataTableRow.ItemArray[9].ToString()).RoomId,
-                            Details = $@"Giảng viên: {dataTableRow.ItemArray[7].ToString()}. Lớp học phần: {dataTableRow.ItemArray[4].ToString()}"
-                        });
+                        ClassInfo classInfo = new ClassInfo(dataTableRow, onlineClass);
+                        classInfo.EncodeDurationTime(_timerList);
+                        classList.Add(classInfo);
                     }
                 }
                 catch (Exception e)
@@ -294,7 +309,14 @@ namespace Analyze_ID_Room
         private void BtnLinkOnline_OnClick(object sender, RoutedEventArgs e)
         {
             ClassInfo obj = ((FrameworkElement)sender).DataContext as ClassInfo;
-            Process.Start($@"https://zoom.us/j/{obj.OnlineId}?status=success");
+            if (obj.OnlineId == -1)
+            {
+                MessageBox.Show("Lớp chưa tổ chức học online", "Thông báo");
+            }
+            else
+            {
+                Process.Start($@"https://zoom.us/j/{obj.OnlineId}?status=success");
+            }
         }
     }
 }
