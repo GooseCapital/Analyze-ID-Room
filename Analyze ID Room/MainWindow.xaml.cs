@@ -9,6 +9,7 @@ using System.Net;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using Analyze_ID_Room.Model;
 using ExcelDataReader;
@@ -76,7 +77,7 @@ namespace Analyze_ID_Room
             _httpRequest = new HttpRequest();
             CookieDictionary cookieDictionary = new CookieDictionary();
             _httpRequest.Cookies = cookieDictionary;
-            _httpRequest.Get("http://dkh.tlu.edu.vn/CMCSoft.IU.Web.Info/Login.aspx");
+            _httpRequest.Get("http://dangky.tlu.edu.vn/CMCSoft.IU.Web.Info/Login.aspx");
             var reqPrams = new RequestParams();
             reqPrams["__EVENTTARGET"] = "";
             reqPrams["__EVENTARGUMENT"] = "";
@@ -111,6 +112,15 @@ namespace Analyze_ID_Room
             return content.Contains(username);
         }
 
+        private string GetStudentId()
+        {
+            string content = _httpRequest
+                .Get("http://dkh.tlu.edu.vn/CMCSoft.IU.Web.Info/Reports/Form/StudentTimeTable.aspx").ToString();
+            return Regex.Match(content,
+                    "<input name=\"hidStudentId\" type=\"hidden\" id=\"hidStudentId\" style=\"WIDTH: 24px; HEIGHT: 19px\" size=\"1\" value=\"(.*?)\" />")
+                .Groups[1].Value;
+        }
+
         private void DownloadScheduleFile()
         {
             var reqPrams = new RequestParams();
@@ -141,7 +151,7 @@ namespace Analyze_ID_Room
             reqPrams["hidUnitPriceKP"] = "0";
             reqPrams["drpType"] = "B";
             reqPrams["btnView"] = "Xuất+file+Excel";
-            reqPrams["hidStudentId"] = "519a4a0f54bc407ba97cd6f1822d14f0";
+            reqPrams["hidStudentId"] = GetStudentId();
             reqPrams["hidAcademicYearId"] = "F732C737EB6E49A8824BC5725BC035E6";
             reqPrams["hidFieldId"] = "F9FB5998C9AB4E47B9CA44617E4A8C3F";
             reqPrams["hidSemester"] = "";
@@ -169,8 +179,6 @@ namespace Analyze_ID_Room
 
         private void BtnInputFile_Click(object sender, RoutedEventArgs e)
         {
-            // bool isLoggedIn = Login("1651122640", "06/09/1998");
-            // DownloadScheduleFile();
             if (!File.Exists("ID.xlsx"))
             {
                 MessageBox.Show("Thiếu file ID.xlsx", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -197,17 +205,19 @@ namespace Analyze_ID_Room
             }
         }
 
-        private void SendToView(string fileName)
+        private bool SendToView(string fileName)
         {
             List<OnlineClassInfo> onlineClassData = ParseOnlineClass("ID.xlsx");
             if (GetScheduleData(fileName, onlineClassData))
             {
                 ListClassInfo.Sort((a, b) => a.StartTime.CompareTo(b.StartTime));
                 DgClassInfo.ItemsSource = ListClassInfo;
+                return true;
             }
             else
             {
                 MessageBox.Show("Có lỗi xảy ra", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
             }
         }
 
@@ -317,6 +327,32 @@ namespace Analyze_ID_Room
             {
                 Process.Start($@"https://zoom.us/j/{obj.OnlineId}?status=success");
             }
+        }
+
+        private void BtnUpdateTime_Click(object sender, RoutedEventArgs e)
+        {
+            if (Login(TbUsername.Text, TbPassword.Password))
+            {
+                DownloadScheduleFile();
+                if (SendToView("1.xls"))
+                {
+                    if (File.Exists("LichHoc.xls"))
+                    {
+                        File.Delete("LichHoc.xls");
+                    }
+                    File.Move("1.xls", "LichHoc.xls");
+                    MessageBox.Show("Cập nhật thành công!");
+                    Properties.Settings.Default.Username = TbUsername.Text;
+                    Properties.Settings.Default.Password = TbPassword.Password;
+                    Properties.Settings.Default.Save();
+                }
+            }
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            TbUsername.Text = Properties.Settings.Default.Username;
+            TbPassword.Password = Properties.Settings.Default.Password;
         }
     }
 }
